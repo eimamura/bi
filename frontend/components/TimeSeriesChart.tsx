@@ -7,13 +7,41 @@ import { formatCurrency } from "../utils/format";
 interface TimeSeriesChartProps {
   data: TimeSeries;
   onPointClick?: (bucket: string) => void;
+  timeGrain?: "month" | "week" | "day";
 }
 
-export default function TimeSeriesChart({ data, onPointClick }: TimeSeriesChartProps) {
+// Format month labels: "2025-09" -> "Sep", "2025-10" -> "Oct", etc.
+function formatMonthLabel(label: string): string {
+  const monthMap: { [key: string]: string } = {
+    "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr",
+    "05": "May", "06": "Jun", "07": "Jul", "08": "Aug",
+    "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec",
+  };
+  
+  // Check if it's a month format (YYYY-MM)
+  if (/^\d{4}-\d{2}$/.test(label)) {
+    const month = label.split("-")[1];
+    return monthMap[month] || label;
+  }
+  
+  return label;
+}
+
+export default function TimeSeriesChart({ data, onPointClick, timeGrain = "month" }: TimeSeriesChartProps) {
   // Optimize X-axis interval based on data length for better performance
   const dataLength = data.data.length;
   // Auto-adjust interval: show every Nth label based on data density
-  const xAxisInterval = dataLength > 30 ? Math.floor(dataLength / 20) : 0;
+  // More aggressive interval for better readability
+  const xAxisInterval = dataLength > 15 ? Math.floor(dataLength / 12) : 0;
+  
+  // For month view, use shorter labels and reduce rotation
+  const isMonthView = timeGrain === "month";
+  const isWeekView = timeGrain === "week";
+  
+  // Reduce rotation angles for better readability
+  const xAxisAngle = isMonthView ? 0 : isWeekView ? -30 : -30;
+  const xAxisHeight = isMonthView ? 50 : isWeekView ? 70 : 80;
+  const bottomMargin = isMonthView ? 50 : isWeekView ? 70 : 80;
   
   return (
     <div
@@ -26,20 +54,26 @@ export default function TimeSeriesChart({ data, onPointClick }: TimeSeriesChartP
       }}
     >
       <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem" }}>Time Series</h2>
-      <div style={{ width: "100%", height: "450px", overflow: "visible" }}>
+      <div style={{ width: "100%", height: "380px", overflow: "visible" }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data.data} margin={{ top: 5, right: 20, bottom: 120, left: 10 }}>
+          <LineChart data={data.data} margin={{ top: 10, right: 20, bottom: bottomMargin, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="bucket"
-              angle={-45}
-              textAnchor="end"
-              height={100}
+              angle={xAxisAngle}
+              textAnchor={isMonthView ? "middle" : "end"}
+              height={xAxisHeight}
               interval={xAxisInterval}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 11 }}
+              tickFormatter={isMonthView ? formatMonthLabel : undefined}
+              dy={isMonthView ? 5 : 8}
             />
           <YAxis />
-          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+          <Tooltip 
+            formatter={(value: number) => formatCurrency(value)}
+            contentStyle={{ cursor: onPointClick ? "pointer" : "default" }}
+            labelFormatter={(label) => onPointClick ? `Click to drill down: ${label}` : label}
+          />
           <Line
             type="monotone"
             dataKey="value"
@@ -48,7 +82,7 @@ export default function TimeSeriesChart({ data, onPointClick }: TimeSeriesChartP
             dot={
               onPointClick
                 ? {
-                    r: 4,
+                    r: 5,
                     fill: "#0070f3",
                     onClick: (_event: any, payload: any) => {
                       if (payload?.payload?.bucket) {
@@ -62,7 +96,10 @@ export default function TimeSeriesChart({ data, onPointClick }: TimeSeriesChartP
             activeDot={
               onPointClick
                 ? {
-                    r: 6,
+                    r: 8,
+                    fill: "#0051cc",
+                    stroke: "#0070f3",
+                    strokeWidth: 2,
                     onClick: (_event: any, payload: any) => {
                       if (payload?.payload?.bucket) {
                         onPointClick(payload.payload.bucket);

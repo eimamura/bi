@@ -7,6 +7,7 @@ import TimeSeriesChart from "../../components/TimeSeriesChart";
 import BreakdownChart from "../../components/BreakdownChart";
 import DataTable from "../../components/DataTable";
 import Breadcrumb from "../../components/Breadcrumb";
+import StatusChips from "../../components/StatusChips";
 import { Filters, KPIs, TimeSeries, Breakdown, DrillState, TimeGrain, BreakdownLevel } from "../types";
 import { fetchKPIs, fetchTimeSeries, fetchBreakdown } from "../api";
 import { formatCurrency, formatNumber } from "../../utils/format";
@@ -401,14 +402,25 @@ export default function Dashboard() {
                 <KPICard title="Total Quantity" value={formatNumber(kpis.total_quantity)} />
                 <KPICard title="Avg Amount/Day" value={formatCurrency(kpis.avg_amount_per_day)} />
                 {kpis.avg_amount_per_tx && (
-                  <KPICard title="Avg Amount/Tx" value={formatCurrency(kpis.avg_amount_per_tx)} />
+                  <KPICard 
+                    title="Avg Amount/Tx" 
+                    value={formatCurrency(kpis.avg_amount_per_tx)}
+                    tooltip="Tx = Transaction. Average amount per transaction."
+                  />
                 )}
                 {kpis.max_daily_amount && (
-                  <KPICard title="Max Daily Amount" value={formatCurrency(kpis.max_daily_amount)} />
+                  <KPICard 
+                    title="Max Daily Amount" 
+                    value={formatCurrency(kpis.max_daily_amount)}
+                    tooltip={`Max Daily Amount: Maximum daily total amount within the selected date range (${drillState.time_grain} granularity)`}
+                  />
                 )}
               </>
             )}
           </div>
+
+          {/* Status Chips */}
+          <StatusChips filters={filters} drillState={drillState} />
 
           {/* Compact Breadcrumbs - Shows current drill state and filter state */}
           <div
@@ -423,23 +435,79 @@ export default function Dashboard() {
               fontSize: "0.875rem",
             }}
           >
-            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
               <Breadcrumb title="Time View" items={getTimeBreadcrumbItems()} />
               <Breadcrumb title="Category View" items={getCategoryBreadcrumbItems()} />
+              {(drillState.time_grain !== "month" || drillState.breakdown_level !== "category" || filters.category || filters.sub_category) && (
+                <div style={{ display: "flex", gap: "0.5rem", marginLeft: "auto" }}>
+                  {(drillState.time_grain !== "month" || drillState.breakdown_level !== "category") && (
+                    <button
+                      onClick={() => {
+                        setDrillState({
+                          time_grain: "month",
+                          breakdown_level: "category",
+                        });
+                        setFilters({
+                          ...filters,
+                          category: undefined,
+                          sub_category: undefined,
+                        });
+                      }}
+                      style={{
+                        padding: "0.25rem 0.75rem",
+                        backgroundColor: "#666",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      Reset Drill
+                    </button>
+                  )}
+                  {drillState.time_grain !== "month" && (
+                    <button
+                      onClick={handleTimeRollup}
+                      style={{
+                        padding: "0.25rem 0.75rem",
+                        backgroundColor: "#0070f3",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      Back (Time)
+                    </button>
+                  )}
+                  {drillState.breakdown_level === "sub_category" && (
+                    <button
+                      onClick={handleCategoryRollup}
+                      style={{
+                        padding: "0.25rem 0.75rem",
+                        backgroundColor: "#0070f3",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      Back (Category)
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            {(filters.category || filters.sub_category) && (
-              <div style={{ fontSize: "0.75rem", color: "#666", marginTop: "0.25rem" }}>
-                Active filters: {filters.category || "All"}
-                {filters.sub_category && ` > ${filters.sub_category}`}
-              </div>
-            )}
           </div>
 
           {/* Charts */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))",
               gap: "1.5rem",
               marginBottom: "1.5rem",
               overflow: "visible",
@@ -451,6 +519,7 @@ export default function Dashboard() {
                 onPointClick={
                   drillState.time_grain !== "day" ? handleTimeDrilldown : undefined
                 }
+                timeGrain={drillState.time_grain}
               />
             )}
             {breakdown && (

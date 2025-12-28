@@ -145,20 +145,10 @@ export default function FilterPanel({ filters, onFiltersChange, onRefresh }: Fil
           </select>
         </div>
       </div>
-      <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
-        <button
-          onClick={onRefresh}
-          style={{
-            padding: "0.5rem 1rem",
-            backgroundColor: "#0070f3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          Refresh
-        </button>
+      <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <div style={{ fontSize: "0.75rem", color: "#666", flex: 1 }}>
+          Filters are applied automatically (date filters: 500ms delay)
+        </div>
         <button
           onClick={handleClear}
           style={{

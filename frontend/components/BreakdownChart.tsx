@@ -13,7 +13,13 @@ export default function BreakdownChart({ data, onBarClick }: BreakdownChartProps
   // Optimize X-axis interval based on data length for better performance
   const dataLength = data.data.length;
   // Auto-adjust interval: show every Nth label based on data density
-  const xAxisInterval = dataLength > 20 ? Math.floor(dataLength / 15) : 0;
+  // More aggressive interval for better readability
+  const xAxisInterval = dataLength > 10 ? Math.floor(dataLength / 8) : 0;
+  
+  // Reduce rotation for better readability - use -30 degrees instead of -45
+  const xAxisAngle = -30;
+  const xAxisHeight = 70;
+  const bottomMargin = 70;
   
   return (
     <div
@@ -26,25 +32,40 @@ export default function BreakdownChart({ data, onBarClick }: BreakdownChartProps
       }}
     >
       <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem" }}>Breakdown</h2>
-      <div style={{ width: "100%", height: "450px", overflow: "visible" }}>
+      <div style={{ width: "100%", height: "380px", overflow: "visible" }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.data} margin={{ top: 5, right: 20, bottom: 120, left: 10 }}>
+          <BarChart data={data.data} margin={{ top: 10, right: 20, bottom: bottomMargin, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="label"
-              angle={-45}
+              angle={xAxisAngle}
               textAnchor="end"
-              height={100}
+              height={xAxisHeight}
               interval={xAxisInterval}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 11 }}
+              dy={8}
             />
           <YAxis />
-          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+          <Tooltip 
+            formatter={(value: number) => formatCurrency(value)}
+            contentStyle={{ cursor: onBarClick ? "pointer" : "default" }}
+            labelFormatter={(label) => onBarClick ? `Click to drill down: ${label}` : label}
+          />
           <Bar
             dataKey="value"
             fill="#0070f3"
             onClick={(data) => onBarClick?.(data.label)}
             style={{ cursor: onBarClick ? "pointer" : "default" }}
+            onMouseEnter={(data) => {
+              if (onBarClick && data) {
+                (data as any).style = { ...(data as any).style, fill: "#0051cc" };
+              }
+            }}
+            onMouseLeave={(data) => {
+              if (onBarClick && data) {
+                (data as any).style = { ...(data as any).style, fill: "#0070f3" };
+              }
+            }}
           />
         </BarChart>
         </ResponsiveContainer>
