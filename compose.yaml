@@ -7,12 +7,13 @@ services:
       POSTGRES_USER: bi_user
       POSTGRES_PASSWORD: bi_password
       POSTGRES_DB: bi_db
+      PGDATABASE: bi_db
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bi_user"]
+      test: ["CMD-SHELL", "PGPASSWORD=bi_password psql -U bi_user -d bi_db -c 'SELECT 1' > /dev/null 2>&1"]
       interval: 5s
       timeout: 5s
       retries: 5
