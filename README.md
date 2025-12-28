@@ -78,17 +78,63 @@ docker compose up
 - `GET /api/breakdown?date_from=<date>&date_to=<date>&group_by=<category|sub_category>&category=<cat>&sub_category=<sub>` - Breakdown data
 - `GET /api/rows?date_from=<date>&date_to=<date>&limit=<n>&offset=<n>&order_by=<col>&order_dir=<asc|desc>&category=<cat>&sub_category=<sub>` - Paginated table data
 
+## Setup and Run
+
+### First Time Setup
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd bi
+```
+
+2. Copy environment file (optional, defaults are in compose.yaml):
+```bash
+cp .env.example .env
+# Edit .env if needed
+```
+
+3. Start all services:
+```bash
+docker compose up
+```
+
+This will:
+- Start PostgreSQL database
+- Run Alembic migrations
+- Start FastAPI backend on port 8000
+- Start Next.js frontend on port 3000
+
+**Note:** On first run, you need to seed the database manually:
+
+```bash
+# In a new terminal, after services are up
+docker compose exec backend alembic upgrade head
+docker compose exec backend python scripts/seed.py
+```
+
+### Access the Application
+
+- **Dashboard**: http://localhost:3000/dashboard
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/healthz
+
 ## Database Reset
 
 To reset the database and reseed data:
 
 ```bash
+# Full reset (removes all data)
 docker compose down -v
 docker compose up -d db
-# Wait for DB to be ready, then run seed script
+# Wait 5-10 seconds for DB to be ready
+docker compose exec backend alembic upgrade head
 docker compose exec backend python scripts/seed.py
 docker compose up
 ```
+
+For more reset options, see RUNBOOK.md.
 
 ## Testing
 
@@ -105,6 +151,16 @@ docker compose exec backend ruff check .
 
 # Frontend
 docker compose exec frontend npm run lint
+```
+
+### Format Code
+```bash
+# Backend
+docker compose exec backend black .
+docker compose exec backend ruff check --fix .
+
+# Frontend
+docker compose exec frontend npm run format
 ```
 
 ## Development
@@ -130,6 +186,51 @@ docker compose exec frontend npm run lint
 1. Default breakdown shows categories
 2. Click a category bar to drill down to sub-categories
 3. Use breadcrumb to roll up: `Category: All > Pumps > SubCategory`
+
+## Demo Steps
+
+1. **Start the application:**
+   ```bash
+   docker compose up
+   ```
+   Wait for all services to be ready (check logs).
+
+2. **Seed the database (first time only):**
+   ```bash
+   docker compose exec backend alembic upgrade head
+   docker compose exec backend python scripts/seed.py
+   ```
+
+3. **Open the dashboard:**
+   - Navigate to http://localhost:3000/dashboard
+
+4. **Test filters:**
+   - Change date range (default: last 90 days)
+   - Select a category from dropdown
+   - Select a sub-category (enabled when category is selected)
+   - Click "Refresh" to reload data
+   - Click "Clear Filters" to reset
+
+5. **Test time drilldown:**
+   - Default view shows monthly aggregation
+   - Click a point on the time-series chart to drill down to weeks
+   - Click a week point to drill down to days
+   - Use breadcrumb "Time: Month > Week(...)" to roll up
+
+6. **Test category drilldown:**
+   - Default breakdown shows categories
+   - Click a category bar to drill down to sub-categories
+   - Use breadcrumb "Category: All > ..." to roll up
+
+7. **Test table:**
+   - Click column headers to sort (ascending/descending)
+   - Use pagination controls to navigate pages
+   - Verify data matches filtered KPIs and charts
+
+8. **Verify consistency:**
+   - Apply filters and note KPI values
+   - Drill down in time/category
+   - Verify KPIs, charts, and table all reflect the same filtered scope
 
 ## Known Issues
 

@@ -8,6 +8,7 @@ from decimal import Decimal
 
 from app.database import get_db
 from app.models import FactSales
+from app.logger import logger
 from app.schemas import (
     KPIsResponse,
     TimeSeriesResponse,
@@ -67,6 +68,7 @@ async def get_kpis(
     db: Session = Depends(get_db),
 ):
     """Get KPI metrics for the filtered date range."""
+    logger.info(f"Fetching KPIs: date_from={date_from}, date_to={date_to}, category={category}, sub_category={sub_category}")
     from_date, to_date = validate_date_range(date_from, date_to)
 
     # Build base query
