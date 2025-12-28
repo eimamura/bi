@@ -36,6 +36,7 @@ export default function FilterPanel({ filters, onFiltersChange, onRefresh }: Fil
           const data: SubCategories = await fetchSubCategories(filters.category);
           setSubCategories(data.sub_categories);
           // Clear sub_category if it's not valid for the new category
+          // Only update if sub_category exists and is invalid to prevent infinite loop
           if (filters.sub_category && !data.sub_categories.includes(filters.sub_category)) {
             onFiltersChange({ ...filters, sub_category: undefined });
           }
@@ -48,6 +49,7 @@ export default function FilterPanel({ filters, onFiltersChange, onRefresh }: Fil
       }
     }
     loadSubCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.category]);
 
   const handleFilterChange = (key: keyof Filters, value: string | undefined) => {

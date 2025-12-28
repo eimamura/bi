@@ -6,7 +6,15 @@ import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://bi_user:bi_password@db:5432/bi_db")
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# Optimize connection pool for better performance
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=10,  # Number of connections to maintain
+    max_overflow=20,  # Maximum overflow connections
+    pool_recycle=3600,  # Recycle connections after 1 hour
+    echo=False,  # Set to True for SQL query logging (debug only)
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

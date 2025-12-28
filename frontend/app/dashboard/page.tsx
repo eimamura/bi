@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import FilterPanel from "../../components/FilterPanel";
 import KPICard from "../../components/KPICard";
 import TimeSeriesChart from "../../components/TimeSeriesChart";
@@ -10,6 +10,23 @@ import Breadcrumb from "../../components/Breadcrumb";
 import { Filters, KPIs, TimeSeries, Breakdown, DrillState, TimeGrain, BreakdownLevel } from "../types";
 import { fetchKPIs, fetchTimeSeries, fetchBreakdown } from "../api";
 import { formatCurrency, formatNumber } from "../../utils/format";
+
+// Debounce utility function
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function Dashboard() {
   // Calculate default date range (last 90 days)
@@ -34,18 +51,41 @@ export default function Dashboard() {
   const [filtersExpanded, setFiltersExpanded] = useState(true);
   const [tableExpanded, setTableExpanded] = useState(false);
 
+  // Debounce only date filters (500ms delay) to reduce API calls
+  // Category/sub-category changes apply immediately
+  const debouncedDateFrom = useDebounce(filters.date_from, 500);
+  const debouncedDateTo = useDebounce(filters.date_to, 500);
+  
+  // Combine debounced date filters with immediate category filters
+  // Use individual values to prevent object reference changes
+  const effectiveFilters = useMemo(
+    () => ({
+      date_from: debouncedDateFrom,
+      date_to: debouncedDateTo,
+      category: filters.category,
+      sub_category: filters.sub_category,
+    }),
+    [debouncedDateFrom, debouncedDateTo, filters.category, filters.sub_category]
+  );
+  
+  // Memoize filter key to prevent unnecessary re-renders
+  const filterKey = useMemo(
+    () => `${effectiveFilters.date_from}-${effectiveFilters.date_to}-${effectiveFilters.category || ""}-${effectiveFilters.sub_category || ""}`,
+    [effectiveFilters.date_from, effectiveFilters.date_to, effectiveFilters.category, effectiveFilters.sub_category]
+  );
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
         const [kpisData, timeSeriesData, breakdownData] = await Promise.all([
-          fetchKPIs(filters),
+          fetchKPIs(effectiveFilters),
           fetchTimeSeries({
-            ...filters,
+            ...effectiveFilters,
             grain: drillState.time_grain,
           }),
           fetchBreakdown({
-            ...filters,
+            ...effectiveFilters,
             group_by: drillState.breakdown_level,
           }),
         ]);
@@ -61,9 +101,10 @@ export default function Dashboard() {
     };
 
     loadData();
-  }, [filters, drillState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, drillState.time_grain, drillState.breakdown_level]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setLoading(true);
     Promise.all([
       fetchKPIs(filters),
@@ -87,7 +128,33 @@ export default function Dashboard() {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, [filters, drillState.time_grain, drillState.breakdown_level]);
+
+  const handleFiltersChange = useCallback((newFilters: Filters) => {
+    setFilters(newFilters);
+    // Sync drill state with filter changes
+    setDrillState((prevState) => {
+      if (newFilters.sub_category) {
+        return {
+          ...prevState,
+          breakdown_level: "sub_category",
+          selected_category: newFilters.category,
+        };
+      } else if (newFilters.category) {
+        return {
+          ...prevState,
+          breakdown_level: "category",
+          selected_category: undefined,
+        };
+      } else {
+        return {
+          ...prevState,
+          breakdown_level: "category",
+          selected_category: undefined,
+        };
+      }
+    });
+  }, []);
 
   // Time drilldown handlers
   const handleTimeDrilldown = (bucket: string) => {
@@ -308,29 +375,7 @@ export default function Dashboard() {
           <div style={{ padding: "0 1rem 1rem 1rem", borderTop: "1px solid #eee" }}>
             <FilterPanel
               filters={filters}
-              onFiltersChange={(newFilters) => {
-                setFilters(newFilters);
-                // Sync drill state with filter changes
-                if (newFilters.sub_category) {
-                  setDrillState({
-                    ...drillState,
-                    breakdown_level: "sub_category",
-                    selected_category: newFilters.category,
-                  });
-                } else if (newFilters.category) {
-                  setDrillState({
-                    ...drillState,
-                    breakdown_level: "category",
-                    selected_category: undefined,
-                  });
-                } else {
-                  setDrillState({
-                    ...drillState,
-                    breakdown_level: "category",
-                    selected_category: undefined,
-                  });
-                }
-              }}
+              onFiltersChange={handleFiltersChange}
               onRefresh={handleRefresh}
             />
           </div>
@@ -397,6 +442,7 @@ export default function Dashboard() {
               gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
               gap: "1.5rem",
               marginBottom: "1.5rem",
+              overflow: "visible",
             }}
           >
             {timeSeries && (
@@ -448,7 +494,7 @@ export default function Dashboard() {
             </button>
             {tableExpanded && (
               <div style={{ padding: "0 1.5rem 1.5rem 1.5rem" }}>
-                <DataTable filters={filters} />
+                <DataTable filters={effectiveFilters} />
               </div>
             )}
           </div>

@@ -104,18 +104,20 @@ async def get_kpis(
     avg_amount_per_day = total_amount / Decimal(str(days_in_range)) if days_in_range > 0 else Decimal("0")
     avg_amount_per_tx = total_amount / Decimal(str(row_count)) if row_count > 0 else None
 
-    # Calculate max daily amount properly
-    daily_sums = (
-        db.execute(
-            select(
-                func.sum(FactSales.amount).label("daily_sum"),
-            )
-            .where(and_(*conditions))
-            .group_by(FactSales.date)
+    # Calculate max daily amount efficiently using window function
+    # This is more efficient than fetching all daily sums
+    daily_sums_subquery = (
+        select(
+            func.sum(FactSales.amount).label("daily_sum"),
         )
-        .all()
+        .where(and_(*conditions))
+        .group_by(FactSales.date)
+        .subquery()
     )
-    max_daily = max([row.daily_sum for row in daily_sums], default=None) if daily_sums else None
+    max_daily_result = db.execute(
+        select(func.max(daily_sums_subquery.c.daily_sum))
+    ).scalar()
+    max_daily = max_daily_result
 
     return KPIsResponse(
         total_amount=total_amount,
@@ -274,8 +276,8 @@ async def get_rows(
     else:
         query = query.order_by(order_column.asc())
 
-    # Get total count
-    count_query = select(func.count()).select_from(query.subquery())
+    # Get total count (optimized: use same conditions without subquery)
+    count_query = select(func.count(FactSales.id)).where(and_(*conditions))
     total = db.execute(count_query).scalar() or 0
 
     # Apply pagination

@@ -10,6 +10,11 @@ interface TimeSeriesChartProps {
 }
 
 export default function TimeSeriesChart({ data, onPointClick }: TimeSeriesChartProps) {
+  // Optimize X-axis interval based on data length for better performance
+  const dataLength = data.data.length;
+  // Auto-adjust interval: show every Nth label based on data density
+  const xAxisInterval = dataLength > 30 ? Math.floor(dataLength / 20) : 0;
+  
   return (
     <div
       style={{
@@ -17,19 +22,20 @@ export default function TimeSeriesChart({ data, onPointClick }: TimeSeriesChartP
         padding: "1.5rem",
         borderRadius: "8px",
         boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        overflow: "visible",
       }}
     >
       <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem" }}>Time Series</h2>
-      <div style={{ width: "100%", height: "400px", paddingBottom: "1rem" }}>
+      <div style={{ width: "100%", height: "450px", overflow: "visible" }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data.data} margin={{ top: 5, right: 20, bottom: 100, left: 10 }}>
+          <LineChart data={data.data} margin={{ top: 5, right: 20, bottom: 120, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="bucket"
               angle={-45}
               textAnchor="end"
               height={100}
-              interval={0}
+              interval={xAxisInterval}
               tick={{ fontSize: 12 }}
             />
           <YAxis />
