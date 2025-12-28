@@ -16,10 +16,3 @@ class FactSales(Base):
     amount = Column(Numeric(10, 2), nullable=False)
     quantity = Column(Integer, nullable=False)
 
-    __table_args__ = (
-        {"postgresql_indexes": [
-            {"name": "idx_date_category", "columns": ["date", "category"]},
-            {"name": "idx_category_subcategory", "columns": ["category", "sub_category"]},
-        ]}
-    )
-

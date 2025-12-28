@@ -3,6 +3,7 @@
 import { TableRow, TableResponse, SortDirection } from "../app/types";
 import { useState, useEffect } from "react";
 import { fetchRows } from "../app/api";
+import { formatCurrency, formatNumber } from "../utils/format";
 
 interface DataTableProps {
   filters: {
@@ -58,15 +59,7 @@ export default function DataTable({ filters }: DataTableProps) {
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div
-      style={{
-        backgroundColor: "white",
-        padding: "1.5rem",
-        borderRadius: "8px",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-      }}
-    >
-      <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem" }}>Data Table</h2>
+    <div>
       {loading ? (
         <div style={{ padding: "2rem", textAlign: "center" }}>Loading...</div>
       ) : (
@@ -144,9 +137,11 @@ export default function DataTable({ filters }: DataTableProps) {
                     <td style={{ padding: "0.75rem" }}>{row.category}</td>
                     <td style={{ padding: "0.75rem" }}>{row.sub_category}</td>
                     <td style={{ padding: "0.75rem", textAlign: "right" }}>
-                      {row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {formatCurrency(row.amount)}
                     </td>
-                    <td style={{ padding: "0.75rem", textAlign: "right" }}>{row.quantity}</td>
+                    <td style={{ padding: "0.75rem", textAlign: "right" }}>
+                      {formatNumber(row.quantity)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -2,6 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Breakdown } from "../app/types";
+import { formatCurrency } from "../utils/format";
 
 interface BreakdownChartProps {
   data: Breakdown;
@@ -19,12 +20,20 @@ export default function BreakdownChart({ data, onBarClick }: BreakdownChartProps
       }}
     >
       <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem" }}>Breakdown</h2>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data.data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="label" angle={-45} textAnchor="end" height={80} />
+      <div style={{ width: "100%", height: "400px", paddingBottom: "1rem" }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data.data} margin={{ top: 5, right: 20, bottom: 100, left: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="label"
+              angle={-45}
+              textAnchor="end"
+              height={100}
+              interval={0}
+              tick={{ fontSize: 12 }}
+            />
           <YAxis />
-          <Tooltip formatter={(value: number) => value.toLocaleString()} />
+          <Tooltip formatter={(value: number) => formatCurrency(value)} />
           <Bar
             dataKey="value"
             fill="#0070f3"
@@ -32,7 +41,8 @@ export default function BreakdownChart({ data, onBarClick }: BreakdownChartProps
             style={{ cursor: onBarClick ? "pointer" : "default" }}
           />
         </BarChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

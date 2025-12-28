@@ -1,57 +1,57 @@
-# BI Dashboard MVP - 最終サマリー
+# BI Dashboard MVP - Final Summary
 
-## 実装完了状況
+## Implementation Status
 
-全6つのマイルストーン（M0-M5）を完了しました。
+All 6 milestones (M0-M5) have been completed.
 
 ### ✅ M0: Repo Bootstrap (mvp-v0.1)
-- Gitリポジトリ初期化
-- Docker Compose設定
-- プロジェクト構造作成
-- Lint/Format設定
+- Git repository initialization
+- Docker Compose configuration
+- Project structure creation
+- Lint/Format configuration
 
 ### ✅ M1: Backend Skeleton (mvp-v0.2)
-- FastAPIアプリケーション
-- `/healthz` エンドポイント
-- メタデータエンドポイント（categories, sub_categories）
+- FastAPI application
+- `/healthz` endpoint
+- Metadata endpoints (categories, sub_categories)
 
 ### ✅ M2: DB + Seed + Aggregations (mvp-v0.3)
-- Alembicマイグレーション
-- シードスクリプト（180日分のデータ）
-- データエンドポイント（KPIs, timeseries, breakdown, rows）
+- Alembic migrations
+- Seed script (180 days of data)
+- Data endpoints (KPIs, timeseries, breakdown, rows)
 
 ### ✅ M3: Frontend Dashboard (mvp-v0.4)
-- フィルターパネル
-- KPIカード
-- 時系列チャート
-- 内訳チャート
-- データテーブル（サーバーサイドページング/ソート）
+- Filter panel
+- KPI cards
+- Time series chart
+- Breakdown chart
+- Data table (server-side paging/sorting)
 
 ### ✅ M4: Drilldown + Roll-up (mvp-v0.5)
-- 時間ドリルダウン（月→週→日）
-- カテゴリードリルダウン（カテゴリー→サブカテゴリー）
-- ブレッドクラムナビゲーション
+- Time drilldown (month→week→day)
+- Category drilldown (category→sub-category)
+- Breadcrumb navigation
 
 ### ✅ M5: Hardening + Docs (mvp-v0.6)
-- エラーハンドリング
-- ロギング
+- Error handling
+- Logging
 - RUNBOOK.md
-- デモ手順
+- Demo procedures
 
-## 実装された機能
+## Implemented Features
 
-### 必須機能（すべて実装済み）
-- ✅ KPIカード（3-5個）
-- ✅ 時系列チャート（ドリルダウン対応）
-- ✅ 内訳チャート（ドリルダウン対応）
-- ✅ データテーブル（サーバーサイドページング/ソート/フィルタリング）
-- ✅ グローバルフィルター（日付範囲、カテゴリー、サブカテゴリー）
-- ✅ 時間ドリルダウン（月→週→日）
-- ✅ カテゴリードリルダウン（カテゴリー→サブカテゴリー）
-- ✅ ロールアップ（ブレッドクラム経由）
-- ✅ データ一貫性（KPIs/チャート/テーブルが同期）
+### Required Features (All Implemented)
+- ✅ KPI Cards (3-5 cards)
+- ✅ Time Series Chart (with drilldown support)
+- ✅ Breakdown Chart (with drilldown support)
+- ✅ Data Table (server-side paging/sorting/filtering)
+- ✅ Global Filters (date range, category, sub-category)
+- ✅ Time Drilldown (month→week→day)
+- ✅ Category Drilldown (category→sub-category)
+- ✅ Roll-up (via breadcrumbs)
+- ✅ Data Consistency (KPIs/charts/table synchronized)
 
-### APIエンドポイント（すべて実装済み）
+### API Endpoints (All Implemented)
 - ✅ `GET /healthz`
 - ✅ `GET /api/kpis`
 - ✅ `GET /api/timeseries`
@@ -60,82 +60,81 @@
 - ✅ `GET /api/meta/categories`
 - ✅ `GET /api/meta/sub_categories`
 
-## 技術スタック
+## Tech Stack
 
 - **Frontend**: Next.js 14 + TypeScript + Recharts + TanStack Table
 - **Backend**: FastAPI + Uvicorn + SQLAlchemy + Alembic
 - **Database**: PostgreSQL 15
 - **Containerization**: Docker Compose v2
 
-## 起動方法
+## Startup Instructions
 
 ```bash
-# 1. リポジトリクローン後
+# 1. After cloning the repository
 cd bi
 
-# 2. サービス起動
+# 2. Start services
 docker compose up
 
-# 3. データベースマイグレーションとシード（初回のみ）
+# 3. Database migration and seed (first time only)
 docker compose exec backend alembic upgrade head
 docker compose exec backend python scripts/seed.py
 ```
 
-## アクセス
+## Access
 
-- **ダッシュボード**: http://localhost:3000/dashboard
+- **Dashboard**: http://localhost:3000/dashboard
 - **API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/healthz
 
-## ドキュメント
+## Documentation
 
-- **README.md**: セットアップ、使用方法、API仕様
-- **RUNBOOK.md**: トラブルシューティング、リセット手順
-- **MILESTONE_REPORT.md**: 各マイルストーンの詳細レポート
+- **README.md**: Setup, usage, API specifications
+- **RUNBOOK.md**: Troubleshooting, reset procedures
+- **MILESTONE_REPORT.md**: Detailed reports for each milestone
 
-## Git状態
+## Git Status
 
-- **ブランチ**: `mvp/bi-dashboard`
-- **タグ**: mvp-v0.1 ～ mvp-v0.6
-- **コミット**: 6つのマイルストーンコミット
-- **リモート**: 未設定（必要に応じて追加してください）
+- **Branch**: `mvp/bi-dashboard`
+- **Tags**: mvp-v0.1 to mvp-v0.6
+- **Commits**: 6 milestone commits
+- **Remote**: Not configured (add as needed)
 
-## 次のステップ
+## Next Steps
 
-1. **リモートリポジトリの設定**（必要に応じて）:
+1. **Set up remote repository** (if needed):
    ```bash
    git remote add origin <repository-url>
    git push -u origin mvp/bi-dashboard
    git push --tags
    ```
 
-2. **動作確認**:
-   - `docker compose up` で全サービス起動
-   - ダッシュボードでフィルター、ドリルダウン、テーブル操作をテスト
+2. **Verify functionality**:
+   - Start all services with `docker compose up`
+   - Test filters, drilldown, and table operations in the dashboard
 
-3. **カスタマイズ**:
-   - デザインの調整
-   - 追加のKPIメトリクス
-   - エラーメッセージのUI表示
+3. **Customization**:
+   - Design adjustments
+   - Additional KPI metrics
+   - UI error message display
 
-## 既知の制限事項
+## Known Limitations
 
-1. 時間ロールアップ時に元のユーザー選択日付範囲が保持されない（デフォルト90日に戻る）
-2. 週フォーマットが開始日（YYYY-MM-DD）で表示される（"2024-W35"形式に変更可能）
-3. ドリルダウン遷移時のローディングインジケーターなし
-4. ユーザー向けエラーメッセージ表示なし（コンソールログのみ）
+1. Original user-selected date range is not preserved during time roll-up (returns to default 90 days)
+2. Week format displays as start date (YYYY-MM-DD) (can be changed to "2024-W35" format)
+3. No loading indicator during drilldown transitions
+4. No user-facing error message display (console logs only)
 
-## 品質ゲート
+## Quality Gates
 
-すべての品質ゲートをパス:
-- ✅ `docker compose up` がクリーンクローンから動作
-- ✅ バックエンドテスト通過（`pytest`）
-- ✅ Lint/Format通過（Black, Ruff, ESLint）
-- ✅ `git status` クリーン
-- ✅ シークレット未コミット（`.env` は `.gitignore` に含まれる）
+All quality gates passed:
+- ✅ `docker compose up` works from clean clone
+- ✅ Backend tests pass (`pytest`)
+- ✅ Lint/Format pass (Black, Ruff, ESLint)
+- ✅ `git status` clean
+- ✅ No secrets committed (`.env` is in `.gitignore`)
 
-## 完了
+## Completion
 
-BI Dashboard MVPは本番環境で使用可能な状態です。すべての必須機能が実装され、ドキュメントも整備されています。
-
+The BI Dashboard MVP is ready for production use. All required features are implemented and documentation is complete.

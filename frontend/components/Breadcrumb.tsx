@@ -12,8 +12,8 @@ interface BreadcrumbProps {
 
 export default function Breadcrumb({ title, items }: BreadcrumbProps) {
   return (
-    <div style={{ marginBottom: "1rem", fontSize: "0.875rem" }}>
-      <span style={{ fontWeight: "500", marginRight: "0.5rem" }}>{title}:</span>
+    <div style={{ fontSize: "0.875rem" }}>
+      <span style={{ fontWeight: "500", marginRight: "0.5rem", color: "#666" }}>{title}:</span>
       {items.map((item, index) => (
         <span key={index}>
           {index > 0 && <span style={{ margin: "0 0.5rem", color: "#999" }}>{" > "}</span>}

@@ -174,18 +174,101 @@ docker compose exec frontend npm run format
 - Code location: `frontend/app/` and `frontend/components/`
 - Hot reload enabled in development mode
 
-## Drilldown Usage
+## Drilldown and Roll-up Usage
 
-### Time Drilldown
-1. Default view shows monthly aggregation
-2. Click a month bar/point to drill down to weeks
-3. Click a week to drill down to days
-4. Use breadcrumb to roll up: `Time: Month > Week(2025-W35) > Day`
+The BI dashboard allows you to drill down into details by clicking on charts and navigate back to higher levels using breadcrumbs.
 
-### Category Drilldown
-1. Default breakdown shows categories
-2. Click a category bar to drill down to sub-categories
-3. Use breadcrumb to roll up: `Category: All > Pumps > SubCategory`
+### 📊 Time Drilldown (Month → Week → Day)
+
+**Initial Display:**
+- The time series chart displays data aggregated by **month**
+- Data points (blue dots) for each month are shown
+
+**Drilldown Steps:**
+
+1. **Drill from Month to Week**
+   - **Click on a month's data point (blue dot)** on the time series chart
+   - The view automatically switches to **weekly** data for that month
+   - The date range filter is also automatically updated to that month's range
+   - The breadcrumb shows `Time: Month > Week(2025-09)`
+
+2. **Drill from Week to Day**
+   - In the weekly view, **click on a week's data point**
+   - The view automatically switches to **daily** data for that week
+   - The breadcrumb shows `Time: Month > Week(2025-09) > Day`
+
+**Roll-up Steps:**
+
+- **Click on the breadcrumb** to return to a higher level
+  - Click **"Month"** in `Time: Month > Week(...)` → Returns to monthly view
+  - Click **"Week(...)"** in `Time: Month > Week(...) > Day` → Returns to weekly view
+- When rolling up, the date range also returns to the original range (default: last 90 days)
+
+**Note:**
+- Daily view is the lowest level and cannot be drilled down further
+- When items are not clickable, the cursor shows as a normal arrow
+
+### 🏷️ Category Drilldown (Category → Sub-Category)
+
+**Initial Display:**
+- The breakdown chart displays data aggregated by **category**
+- Bar charts for each category (e.g., Pumps, Valves, Filters) are shown
+
+**Drilldown Steps:**
+
+1. **Drill from Category to Sub-Category**
+   - **Click on a category's bar** in the breakdown chart
+   - The view automatically switches to **sub-category** level data for that category
+   - The category filter is also automatically set to the selected category
+   - The breadcrumb shows `Category: All > Pumps`
+
+**Roll-up Steps:**
+
+- **Click "All" in the breadcrumb** to return to category level
+  - Click **"All"** in `Category: All > Pumps` → Returns to all categories view
+- When rolling up, the category filter is also cleared
+
+**Note:**
+- Sub-category view is the lowest level and cannot be drilled down further
+- When items are not clickable, the cursor shows as a normal arrow
+
+### 🔄 Data Synchronization
+
+When performing drilldown or roll-up, the following elements are **automatically synchronized** and updated:
+
+- ✅ **KPI Cards** (total amount, total quantity, averages, etc.)
+- ✅ **Time Series Chart** (time grain changes)
+- ✅ **Breakdown Chart** (aggregation level changes)
+- ✅ **Data Table** (displayed data updates according to filters)
+- ✅ **Date Range Filter** (automatically updated during time drilldown)
+
+### 💡 Usage Tips
+
+1. **Combine with Filters**
+   - It's efficient to set date range or category filters first, then drill down
+   - Use the "Refresh" button to apply filters
+
+2. **Check Current Position with Breadcrumbs**
+   - The breadcrumb at the top shows which level you're currently viewing
+   - Clickable items are shown in blue and can be clicked to roll up
+
+3. **View Details Progressively**
+   - First understand the overall picture (monthly, category level)
+   - Click on interesting periods or categories to see details
+   - Use breadcrumbs to navigate back when needed
+
+### 🎯 Usage Examples
+
+**Example 1: View Weekly Trends for a Specific Month**
+1. Click on a month's point in the time series chart
+2. Weekly data for that month is displayed
+3. Click on a week to see daily data
+4. Click "Month" in the breadcrumb to return to monthly view
+
+**Example 2: View Sub-Category Breakdown for a Specific Category**
+1. Click on the "Pumps" bar in the breakdown chart
+2. Sub-category data for Pumps is displayed
+3. Click "All" in the breadcrumb to return to all categories view
 
 ## Demo Steps
 
@@ -212,15 +295,17 @@ docker compose exec frontend npm run format
    - Click "Clear Filters" to reset
 
 5. **Test time drilldown:**
-   - Default view shows monthly aggregation
-   - Click a point on the time-series chart to drill down to weeks
-   - Click a week point to drill down to days
-   - Use breadcrumb "Time: Month > Week(...)" to roll up
+   - Initial display shows monthly aggregation
+   - **Click on a blue dot (month's data point) in the time series chart** → Switches to weekly data for that month
+   - **Click on a week's data point** → Switches to daily data for that week
+   - **Click "Month" in the breadcrumb** → Returns to monthly view
+   - Verify that KPI cards, charts, and table all update together
 
 6. **Test category drilldown:**
-   - Default breakdown shows categories
-   - Click a category bar to drill down to sub-categories
-   - Use breadcrumb "Category: All > ..." to roll up
+   - Initial display shows category-level aggregation
+   - **Click on a bar in the breakdown chart (e.g., "Pumps")** → Switches to sub-category data for that category
+   - **Click "All" in the breadcrumb** → Returns to all categories view
+   - Verify that the category filter is automatically set
 
 7. **Test table:**
    - Click column headers to sort (ascending/descending)

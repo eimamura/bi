@@ -9,6 +9,7 @@ import DataTable from "../../components/DataTable";
 import Breadcrumb from "../../components/Breadcrumb";
 import { Filters, KPIs, TimeSeries, Breakdown, DrillState, TimeGrain, BreakdownLevel } from "../types";
 import { fetchKPIs, fetchTimeSeries, fetchBreakdown } from "../api";
+import { formatCurrency, formatNumber } from "../../utils/format";
 
 export default function Dashboard() {
   // Calculate default date range (last 90 days)
@@ -30,6 +31,8 @@ export default function Dashboard() {
   const [timeSeries, setTimeSeries] = useState<TimeSeries | null>(null);
   const [breakdown, setBreakdown] = useState<Breakdown | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [tableExpanded, setTableExpanded] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -191,11 +194,11 @@ export default function Dashboard() {
     }
   };
 
-  // Build breadcrumb items
+  // Build breadcrumb items - sync with filters and drill state
   const getTimeBreadcrumbItems = () => {
     const items = [];
     items.push({
-      label: "Month",
+      label: drillState.time_grain === "month" ? "Month" : drillState.time_grain === "week" ? "Week" : "Day",
       onClick: drillState.time_grain !== "month" ? handleTimeRollup : undefined,
     });
 
@@ -217,15 +220,52 @@ export default function Dashboard() {
 
   const getCategoryBreadcrumbItems = () => {
     const items = [];
-    items.push({
-      label: "All",
-      onClick: drillState.breakdown_level !== "category" ? handleCategoryRollup : undefined,
-    });
-
-    if (drillState.breakdown_level === "sub_category" && drillState.selected_category) {
+    
+    // Priority: Show filter state first, then drill state
+    if (filters.category) {
+      // Category filter is active
       items.push({
-        label: drillState.selected_category,
+        label: filters.category,
+        onClick: () => {
+          setFilters({ ...filters, category: undefined, sub_category: undefined });
+          setDrillState({
+            ...drillState,
+            breakdown_level: "category",
+            selected_category: undefined,
+          });
+        },
       });
+      
+      if (filters.sub_category) {
+        // Sub-category filter is active
+        items.push({
+          label: filters.sub_category,
+          onClick: () => {
+            setFilters({ ...filters, sub_category: undefined });
+            setDrillState({
+              ...drillState,
+              breakdown_level: "category",
+            });
+          },
+        });
+      } else if (drillState.breakdown_level === "sub_category" && drillState.selected_category === filters.category) {
+        // Drilldown to sub-categories for the filtered category
+        items.push({
+          label: "Sub-Categories",
+        });
+      }
+    } else {
+      // No category filter, show drill state
+      items.push({
+        label: "All",
+        onClick: drillState.breakdown_level !== "category" ? handleCategoryRollup : undefined,
+      });
+
+      if (drillState.breakdown_level === "sub_category" && drillState.selected_category) {
+        items.push({
+          label: drillState.selected_category,
+        });
+      }
     }
 
     return items;
@@ -233,9 +273,69 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
-      <h1 style={{ marginBottom: "2rem", fontSize: "2rem" }}>BI Dashboard</h1>
+      <h1 style={{ marginBottom: "1.5rem", fontSize: "2rem", fontWeight: "600" }}>BI Dashboard</h1>
 
-      <FilterPanel filters={filters} onFiltersChange={setFilters} onRefresh={handleRefresh} />
+      {/* Compact Filters */}
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <button
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          style={{
+            width: "100%",
+            padding: "1rem",
+            border: "none",
+            background: "none",
+            cursor: "pointer",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: "1rem",
+            fontWeight: "500",
+          }}
+        >
+          <span>Filters</span>
+          <span style={{ fontSize: "0.875rem", color: "#666" }}>
+            {filtersExpanded ? "▲" : "▼"}
+          </span>
+        </button>
+        {filtersExpanded && (
+          <div style={{ padding: "0 1rem 1rem 1rem", borderTop: "1px solid #eee" }}>
+            <FilterPanel
+              filters={filters}
+              onFiltersChange={(newFilters) => {
+                setFilters(newFilters);
+                // Sync drill state with filter changes
+                if (newFilters.sub_category) {
+                  setDrillState({
+                    ...drillState,
+                    breakdown_level: "sub_category",
+                    selected_category: newFilters.category,
+                  });
+                } else if (newFilters.category) {
+                  setDrillState({
+                    ...drillState,
+                    breakdown_level: "category",
+                    selected_category: undefined,
+                  });
+                } else {
+                  setDrillState({
+                    ...drillState,
+                    breakdown_level: "category",
+                    selected_category: undefined,
+                  });
+                }
+              }}
+              onRefresh={handleRefresh}
+            />
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <div style={{ padding: "2rem", textAlign: "center" }}>Loading dashboard data...</div>
@@ -245,57 +345,56 @@ export default function Dashboard() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
               gap: "1rem",
               marginBottom: "1.5rem",
             }}
           >
             {kpis && (
               <>
-                <KPICard
-                  title="Total Amount"
-                  value={`$${kpis.total_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                />
-                <KPICard title="Total Quantity" value={kpis.total_quantity.toLocaleString()} />
-                <KPICard
-                  title="Avg Amount/Day"
-                  value={`$${kpis.avg_amount_per_day.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                />
+                <KPICard title="Total Amount" value={formatCurrency(kpis.total_amount)} />
+                <KPICard title="Total Quantity" value={formatNumber(kpis.total_quantity)} />
+                <KPICard title="Avg Amount/Day" value={formatCurrency(kpis.avg_amount_per_day)} />
                 {kpis.avg_amount_per_tx && (
-                  <KPICard
-                    title="Avg Amount/Tx"
-                    value={`$${kpis.avg_amount_per_tx.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                  />
+                  <KPICard title="Avg Amount/Tx" value={formatCurrency(kpis.avg_amount_per_tx)} />
                 )}
                 {kpis.max_daily_amount && (
-                  <KPICard
-                    title="Max Daily Amount"
-                    value={`$${kpis.max_daily_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                  />
+                  <KPICard title="Max Daily Amount" value={formatCurrency(kpis.max_daily_amount)} />
                 )}
               </>
             )}
           </div>
 
-          {/* Breadcrumbs */}
+          {/* Compact Breadcrumbs - Shows current drill state and filter state */}
           <div
             style={{
-              backgroundColor: "white",
-              padding: "1rem",
-              borderRadius: "8px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              marginBottom: "1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5rem",
+              marginBottom: "1rem",
+              padding: "0.75rem",
+              backgroundColor: "#f8f9fa",
+              borderRadius: "6px",
+              fontSize: "0.875rem",
             }}
           >
-            <Breadcrumb title="Time" items={getTimeBreadcrumbItems()} />
-            <Breadcrumb title="Category" items={getCategoryBreadcrumbItems()} />
+            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+              <Breadcrumb title="Time View" items={getTimeBreadcrumbItems()} />
+              <Breadcrumb title="Category View" items={getCategoryBreadcrumbItems()} />
+            </div>
+            {(filters.category || filters.sub_category) && (
+              <div style={{ fontSize: "0.75rem", color: "#666", marginTop: "0.25rem" }}>
+                Active filters: {filters.category || "All"}
+                {filters.sub_category && ` > ${filters.sub_category}`}
+              </div>
+            )}
           </div>
 
           {/* Charts */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(500px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
               gap: "1.5rem",
               marginBottom: "1.5rem",
             }}
@@ -318,8 +417,41 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Data Table */}
-          <DataTable filters={filters} />
+          {/* Collapsible Data Table */}
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            }}
+          >
+            <button
+              onClick={() => setTableExpanded(!tableExpanded)}
+              style={{
+                width: "100%",
+                padding: "1rem 1.5rem",
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                fontSize: "1.25rem",
+                fontWeight: "500",
+                borderBottom: tableExpanded ? "1px solid #eee" : "none",
+              }}
+            >
+              <span>Data Table</span>
+              <span style={{ fontSize: "0.875rem", color: "#666" }}>
+                {tableExpanded ? "▲ Collapse" : "▼ Expand"}
+              </span>
+            </button>
+            {tableExpanded && (
+              <div style={{ padding: "0 1.5rem 1.5rem 1.5rem" }}>
+                <DataTable filters={filters} />
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

@@ -62,16 +62,7 @@ export default function FilterPanel({ filters, onFiltersChange, onRefresh }: Fil
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: "white",
-        padding: "1.5rem",
-        borderRadius: "8px",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        marginBottom: "1.5rem",
-      }}
-    >
-      <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem" }}>Filters</h2>
+    <div style={{ paddingTop: "1rem" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
         <div>
           <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: "500" }}>
