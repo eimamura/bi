@@ -42,6 +42,7 @@ def build_filter_query(
     date_to: date,
     category: Optional[str] = None,
     sub_category: Optional[str] = None,
+    sku: Optional[str] = None,
 ):
     """Build base filtered query."""
     query = select(FactSales).where(
@@ -55,6 +56,8 @@ def build_filter_query(
         query = query.where(FactSales.category == category)
     if sub_category:
         query = query.where(FactSales.sub_category == sub_category)
+    if sku:
+        query = query.where(FactSales.sku == sku)
 
     return query
 
@@ -65,14 +68,15 @@ async def get_kpis(
     date_to: str = Query(..., description="End date (YYYY-MM-DD)"),
     category: Optional[str] = Query(None, description="Filter by category"),
     sub_category: Optional[str] = Query(None, description="Filter by sub-category"),
+    sku: Optional[str] = Query(None, description="Filter by SKU"),
     db: Session = Depends(get_db),
 ):
     """Get KPI metrics for the filtered date range."""
-    logger.info(f"Fetching KPIs: date_from={date_from}, date_to={date_to}, category={category}, sub_category={sub_category}")
+    logger.info(f"Fetching KPIs: date_from={date_from}, date_to={date_to}, category={category}, sub_category={sub_category}, sku={sku}")
     from_date, to_date = validate_date_range(date_from, date_to)
 
     # Build base query
-    base_query = build_filter_query(db, from_date, to_date, category, sub_category)
+    base_query = build_filter_query(db, from_date, to_date, category, sub_category, sku)
 
     # Build filter conditions for aggregations
     conditions = [
@@ -83,6 +87,8 @@ async def get_kpis(
         conditions.append(FactSales.category == category)
     if sub_category:
         conditions.append(FactSales.sub_category == sub_category)
+    if sku:
+        conditions.append(FactSales.sku == sku)
 
     # Calculate aggregations
     result = db.execute(
@@ -135,6 +141,7 @@ async def get_timeseries(
     grain: str = Query("month", description="Time grain: month, week, or day"),
     category: Optional[str] = Query(None, description="Filter by category"),
     sub_category: Optional[str] = Query(None, description="Filter by sub-category"),
+    sku: Optional[str] = Query(None, description="Filter by SKU"),
     db: Session = Depends(get_db),
 ):
     """Get time series data aggregated by time grain."""
@@ -152,6 +159,8 @@ async def get_timeseries(
         conditions.append(FactSales.category == category)
     if sub_category:
         conditions.append(FactSales.sub_category == sub_category)
+    if sku:
+        conditions.append(FactSales.sku == sku)
 
     # Group by time grain
     if grain == "month":
@@ -190,6 +199,7 @@ async def get_breakdown(
     group_by: str = Query("category", description="Group by: category or sub_category"),
     category: Optional[str] = Query(None, description="Filter by category"),
     sub_category: Optional[str] = Query(None, description="Filter by sub-category"),
+    sku: Optional[str] = Query(None, description="Filter by SKU"),
     db: Session = Depends(get_db),
 ):
     """Get breakdown data grouped by category or sub_category."""
@@ -207,6 +217,8 @@ async def get_breakdown(
         conditions.append(FactSales.category == category)
     if sub_category:
         conditions.append(FactSales.sub_category == sub_category)
+    if sku:
+        conditions.append(FactSales.sku == sku)
 
     # Group by field
     if group_by == "category":
@@ -242,6 +254,7 @@ async def get_rows(
     order_dir: str = Query("desc", description="Sort direction: asc or desc"),
     category: Optional[str] = Query(None, description="Filter by category"),
     sub_category: Optional[str] = Query(None, description="Filter by sub-category"),
+    sku: Optional[str] = Query(None, description="Filter by SKU"),
     db: Session = Depends(get_db),
 ):
     """Get paginated table rows with sorting and filtering."""
@@ -250,7 +263,7 @@ async def get_rows(
     if order_dir not in ["asc", "desc"]:
         raise HTTPException(status_code=400, detail="order_dir must be 'asc' or 'desc'.")
 
-    valid_columns = ["date", "category", "sub_category", "amount", "quantity"]
+    valid_columns = ["date", "category", "sub_category", "sku", "amount", "quantity"]
     if order_by not in valid_columns:
         raise HTTPException(
             status_code=400, detail=f"order_by must be one of: {', '.join(valid_columns)}."
@@ -292,6 +305,7 @@ async def get_rows(
             date=row.date,
             category=row.category,
             sub_category=row.sub_category,
+            sku=row.sku,
             amount=row.amount,
             quantity=row.quantity,
         )

@@ -20,6 +20,11 @@ class SubCategoryResponse(BaseModel):
     sub_categories: List[str]
 
 
+class SKUResponse(BaseModel):
+    """SKU metadata response."""
+    skus: List[str]
+
+
 class KPIsResponse(BaseModel):
     """KPI metrics response."""
     total_amount: Decimal
@@ -57,6 +62,7 @@ class TableRow(BaseModel):
     date: date
     category: str
     sub_category: str
+    sku: str
     amount: Decimal
     quantity: int
 

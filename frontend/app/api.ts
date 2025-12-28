@@ -5,6 +5,7 @@ export async function fetchKPIs(filters: {
   date_to: string;
   category?: string;
   sub_category?: string;
+  sku?: string;
 }) {
   const params = new URLSearchParams({
     date_from: filters.date_from,
@@ -12,6 +13,7 @@ export async function fetchKPIs(filters: {
   });
   if (filters.category) params.append("category", filters.category);
   if (filters.sub_category) params.append("sub_category", filters.sub_category);
+  if (filters.sku) params.append("sku", filters.sku);
 
   const res = await fetch(`${API_URL}/api/kpis?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch KPIs: ${res.statusText}`);
@@ -24,6 +26,7 @@ export async function fetchTimeSeries(filters: {
   grain: string;
   category?: string;
   sub_category?: string;
+  sku?: string;
 }) {
   const params = new URLSearchParams({
     date_from: filters.date_from,
@@ -32,6 +35,7 @@ export async function fetchTimeSeries(filters: {
   });
   if (filters.category) params.append("category", filters.category);
   if (filters.sub_category) params.append("sub_category", filters.sub_category);
+  if (filters.sku) params.append("sku", filters.sku);
 
   const res = await fetch(`${API_URL}/api/timeseries?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch time series: ${res.statusText}`);
@@ -44,6 +48,7 @@ export async function fetchBreakdown(filters: {
   group_by: string;
   category?: string;
   sub_category?: string;
+  sku?: string;
 }) {
   const params = new URLSearchParams({
     date_from: filters.date_from,
@@ -52,6 +57,7 @@ export async function fetchBreakdown(filters: {
   });
   if (filters.category) params.append("category", filters.category);
   if (filters.sub_category) params.append("sub_category", filters.sub_category);
+  if (filters.sku) params.append("sku", filters.sku);
 
   const res = await fetch(`${API_URL}/api/breakdown?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch breakdown: ${res.statusText}`);
@@ -67,6 +73,7 @@ export async function fetchRows(filters: {
   order_dir: string;
   category?: string;
   sub_category?: string;
+  sku?: string;
 }) {
   const params = new URLSearchParams({
     date_from: filters.date_from,
@@ -78,6 +85,7 @@ export async function fetchRows(filters: {
   });
   if (filters.category) params.append("category", filters.category);
   if (filters.sub_category) params.append("sub_category", filters.sub_category);
+  if (filters.sku) params.append("sku", filters.sku);
 
   const res = await fetch(`${API_URL}/api/rows?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch rows: ${res.statusText}`);
@@ -93,6 +101,15 @@ export async function fetchCategories() {
 export async function fetchSubCategories(category: string) {
   const res = await fetch(`${API_URL}/api/meta/sub_categories?category=${encodeURIComponent(category)}`);
   if (!res.ok) throw new Error(`Failed to fetch sub-categories: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchSKUs(category?: string, sub_category?: string) {
+  const params = new URLSearchParams();
+  if (category) params.append("category", category);
+  if (sub_category) params.append("sub_category", sub_category);
+  const res = await fetch(`${API_URL}/api/meta/skus?${params}`);
+  if (!res.ok) throw new Error(`Failed to fetch SKUs: ${res.statusText}`);
   return res.json();
 }
 

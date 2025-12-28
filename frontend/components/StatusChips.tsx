@@ -69,6 +69,20 @@ export default function StatusChips({ filters, drillState }: StatusChipsProps) {
           display: "inline-flex",
           alignItems: "center",
           padding: "0.25rem 0.75rem",
+          backgroundColor: "#e1f5fe",
+          color: "#01579b",
+          borderRadius: "16px",
+          fontSize: "0.875rem",
+          fontWeight: "500",
+        }}
+      >
+        SKU: {filters.sku || "All"}
+      </div>
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          padding: "0.25rem 0.75rem",
           backgroundColor: "#f3e5f5",
           color: "#7b1fa2",
           borderRadius: "16px",

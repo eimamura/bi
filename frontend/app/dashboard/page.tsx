@@ -65,14 +65,15 @@ export default function Dashboard() {
       date_to: debouncedDateTo,
       category: filters.category,
       sub_category: filters.sub_category,
+      sku: filters.sku,
     }),
-    [debouncedDateFrom, debouncedDateTo, filters.category, filters.sub_category]
+    [debouncedDateFrom, debouncedDateTo, filters.category, filters.sub_category, filters.sku]
   );
   
   // Memoize filter key to prevent unnecessary re-renders
   const filterKey = useMemo(
-    () => `${effectiveFilters.date_from}-${effectiveFilters.date_to}-${effectiveFilters.category || ""}-${effectiveFilters.sub_category || ""}`,
-    [effectiveFilters.date_from, effectiveFilters.date_to, effectiveFilters.category, effectiveFilters.sub_category]
+    () => `${effectiveFilters.date_from}-${effectiveFilters.date_to}-${effectiveFilters.category || ""}-${effectiveFilters.sub_category || ""}-${effectiveFilters.sku || ""}`,
+    [effectiveFilters.date_from, effectiveFilters.date_to, effectiveFilters.category, effectiveFilters.sub_category, effectiveFilters.sku]
   );
 
   useEffect(() => {

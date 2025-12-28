@@ -29,6 +29,7 @@ export interface TableRow {
   date: string;
   category: string;
   sub_category: string;
+  sku: string;
   amount: number;
   quantity: number;
 }
@@ -48,6 +49,10 @@ export interface SubCategories {
   sub_categories: string[];
 }
 
+export interface SKUs {
+  skus: string[];
+}
+
 export type TimeGrain = "month" | "week" | "day";
 export type BreakdownLevel = "category" | "sub_category";
 export type SortDirection = "asc" | "desc";
@@ -57,6 +62,7 @@ export interface Filters {
   date_to: string;
   category?: string;
   sub_category?: string;
+  sku?: string;
 }
 
 export interface DrillState {

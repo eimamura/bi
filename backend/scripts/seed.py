@@ -37,6 +37,18 @@ def generate_sales_data(start_date: date, days: int) -> list[FactSales]:
     data = []
     end_date = start_date + timedelta(days=days - 1)
     current_date = start_date
+    
+    # Generate SKU pool per sub-category
+    sku_pool: dict[str, list[str]] = {}
+    for category, sub_categories in CATEGORIES.items():
+        for sub_category in sub_categories:
+            key = f"{category}-{sub_category}"
+            # Generate 3-8 SKUs per sub-category
+            num_skus = random.randint(3, 8)
+            sku_pool[key] = [
+                f"{category[:3].upper()}-{sub_category[:3].upper()}-{str(i+1).zfill(3)}"
+                for i in range(num_skus)
+            ]
 
     while current_date <= end_date:
         # Generate 5-20 transactions per day
@@ -45,6 +57,10 @@ def generate_sales_data(start_date: date, days: int) -> list[FactSales]:
         for _ in range(num_transactions):
             category = random.choice(list(CATEGORIES.keys()))
             sub_category = random.choice(CATEGORIES[category])
+            
+            # Select random SKU from pool
+            key = f"{category}-{sub_category}"
+            sku = random.choice(sku_pool[key])
 
             # Amount varies by category
             min_amount, max_amount = BASE_AMOUNTS[category]
@@ -70,6 +86,7 @@ def generate_sales_data(start_date: date, days: int) -> list[FactSales]:
                     date=current_date,
                     category=category,
                     sub_category=sub_category,
+                    sku=sku,
                     amount=amount,
                     quantity=quantity,
                 )

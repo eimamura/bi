@@ -11,10 +11,11 @@ interface DataTableProps {
     date_to: string;
     category?: string;
     sub_category?: string;
+    sku?: string;
   };
 }
 
-type SortColumn = "date" | "category" | "sub_category" | "amount" | "quantity";
+type SortColumn = "date" | "category" | "sub_category" | "sku" | "amount" | "quantity";
 
 export default function DataTable({ filters }: DataTableProps) {
   const [data, setData] = useState<TableRow[]>([]);
@@ -105,6 +106,18 @@ export default function DataTable({ filters }: DataTableProps) {
                     Sub-Category {orderBy === "sub_category" && (orderDir === "asc" ? "↑" : "↓")}
                   </th>
                   <th
+                    onClick={() => handleSort("sku")}
+                    style={{
+                      padding: "0.75rem",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      userSelect: "none",
+                      backgroundColor: orderBy === "sku" ? "#f0f0f0" : "transparent",
+                    }}
+                  >
+                    SKU {orderBy === "sku" && (orderDir === "asc" ? "↑" : "↓")}
+                  </th>
+                  <th
                     onClick={() => handleSort("amount")}
                     style={{
                       padding: "0.75rem",
@@ -136,6 +149,7 @@ export default function DataTable({ filters }: DataTableProps) {
                     <td style={{ padding: "0.75rem" }}>{row.date}</td>
                     <td style={{ padding: "0.75rem" }}>{row.category}</td>
                     <td style={{ padding: "0.75rem" }}>{row.sub_category}</td>
+                    <td style={{ padding: "0.75rem" }}>{row.sku}</td>
                     <td style={{ padding: "0.75rem", textAlign: "right" }}>
                       {formatCurrency(row.amount)}
                     </td>

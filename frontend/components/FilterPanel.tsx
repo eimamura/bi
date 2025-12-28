@@ -1,8 +1,8 @@
 "use client";
 
-import { Filters, Categories, SubCategories } from "../app/types";
+import { Filters, Categories, SubCategories, SKUs } from "../app/types";
 import { useState, useEffect } from "react";
-import { fetchCategories, fetchSubCategories } from "../app/api";
+import { fetchCategories, fetchSubCategories, fetchSKUs } from "../app/api";
 
 interface FilterPanelProps {
   filters: Filters;
@@ -13,6 +13,7 @@ interface FilterPanelProps {
 export default function FilterPanel({ filters, onFiltersChange, onRefresh }: FilterPanelProps) {
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
+  const [skus, setSKUs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,6 +52,28 @@ export default function FilterPanel({ filters, onFiltersChange, onRefresh }: Fil
     loadSubCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.category]);
+
+  useEffect(() => {
+    async function loadSKUs() {
+      if (filters.category || filters.sub_category) {
+        try {
+          const data: SKUs = await fetchSKUs(filters.category, filters.sub_category);
+          setSKUs(data.skus);
+          // Clear sku if it's not valid for the new filters
+          if (filters.sku && !data.skus.includes(filters.sku)) {
+            onFiltersChange({ ...filters, sku: undefined });
+          }
+        } catch (error) {
+          console.error("Failed to load SKUs:", error);
+          setSKUs([]);
+        }
+      } else {
+        setSKUs([]);
+      }
+    }
+    loadSKUs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.category, filters.sub_category]);
 
   const handleFilterChange = (key: keyof Filters, value: string | undefined) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -140,6 +163,29 @@ export default function FilterPanel({ filters, onFiltersChange, onRefresh }: Fil
             {subCategories.map((sub) => (
               <option key={sub} value={sub}>
                 {sub}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: "500" }}>
+            SKU
+          </label>
+          <select
+            value={filters.sku || ""}
+            onChange={(e) => handleFilterChange("sku", e.target.value || undefined)}
+            disabled={(!filters.category && !filters.sub_category) || loading}
+            style={{
+              width: "100%",
+              padding: "0.5rem",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+            }}
+          >
+            <option value="">All</option>
+            {skus.map((sku) => (
+              <option key={sku} value={sku}>
+                {sku}
               </option>
             ))}
           </select>

@@ -13,6 +13,7 @@ class FactSales(Base):
     date = Column(Date, nullable=False, index=True)
     category = Column(String, nullable=False, index=True)
     sub_category = Column(String, nullable=False, index=True)
+    sku = Column(String, nullable=False, index=True)
     amount = Column(Numeric(10, 2), nullable=False)
     quantity = Column(Integer, nullable=False)
 
