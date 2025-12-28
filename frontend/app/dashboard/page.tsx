@@ -6,6 +6,7 @@ import KPICard from "../../components/KPICard";
 import TimeSeriesChart from "../../components/TimeSeriesChart";
 import BreakdownChart from "../../components/BreakdownChart";
 import DataTable from "../../components/DataTable";
+import Breadcrumb from "../../components/Breadcrumb";
 import { Filters, KPIs, TimeSeries, Breakdown, DrillState, TimeGrain, BreakdownLevel } from "../types";
 import { fetchKPIs, fetchTimeSeries, fetchBreakdown } from "../api";
 
@@ -85,6 +86,151 @@ export default function Dashboard() {
       });
   };
 
+  // Time drilldown handlers
+  const handleTimeDrilldown = (bucket: string) => {
+    const currentGrain = drillState.time_grain;
+    let nextGrain: TimeGrain;
+    let dateFrom: string;
+    let dateTo: string;
+
+    if (currentGrain === "month") {
+      // Drill from month to week
+      nextGrain = "week";
+      // Parse YYYY-MM format and get first/last day of month
+      const [year, month] = bucket.split("-").map(Number);
+      dateFrom = new Date(year, month - 1, 1).toISOString().split("T")[0];
+      dateTo = new Date(year, month, 0).toISOString().split("T")[0];
+    } else if (currentGrain === "week") {
+      // Drill from week to day
+      nextGrain = "day";
+      // Bucket is YYYY-MM-DD (start of week from date_trunc)
+      const weekStart = new Date(bucket + "T00:00:00");
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      dateFrom = weekStart.toISOString().split("T")[0];
+      dateTo = weekEnd.toISOString().split("T")[0];
+    } else {
+      // Already at day level, no further drilldown
+      return;
+    }
+
+    setDrillState({
+      ...drillState,
+      time_grain: nextGrain,
+      selected_time_bucket: bucket,
+    });
+
+    // Update filters to focus on the selected time bucket
+    setFilters({
+      ...filters,
+      date_from: dateFrom,
+      date_to: dateTo,
+    });
+  };
+
+  const handleTimeRollup = () => {
+    const currentGrain = drillState.time_grain;
+    let prevGrain: TimeGrain;
+
+    if (currentGrain === "day") {
+      prevGrain = "week";
+    } else if (currentGrain === "week") {
+      prevGrain = "month";
+    } else {
+      return; // Already at top level
+    }
+
+    setDrillState({
+      ...drillState,
+      time_grain: prevGrain,
+      selected_time_bucket: undefined,
+    });
+
+    // Restore original date range (use default 90 days)
+    const today = new Date();
+    const ninetyDaysAgo = new Date(today);
+    ninetyDaysAgo.setDate(today.getDate() - 90);
+    setFilters({
+      ...filters,
+      date_from: ninetyDaysAgo.toISOString().split("T")[0],
+      date_to: today.toISOString().split("T")[0],
+    });
+  };
+
+  // Category drilldown handlers
+  const handleCategoryDrilldown = (label: string) => {
+    if (drillState.breakdown_level === "category") {
+      // Drill from category to sub_category
+      setDrillState({
+        ...drillState,
+        breakdown_level: "sub_category",
+        selected_category: label,
+      });
+      // Update filters to focus on the selected category
+      setFilters({
+        ...filters,
+        category: label,
+        sub_category: undefined, // Clear sub_category when drilling down
+      });
+    }
+  };
+
+  const handleCategoryRollup = () => {
+    if (drillState.breakdown_level === "sub_category") {
+      setDrillState({
+        ...drillState,
+        breakdown_level: "category",
+        selected_category: undefined,
+      });
+      // Clear category filter but keep other filters
+      setFilters({
+        ...filters,
+        category: undefined,
+        sub_category: undefined,
+      });
+    }
+  };
+
+  // Build breadcrumb items
+  const getTimeBreadcrumbItems = () => {
+    const items = [];
+    items.push({
+      label: "Month",
+      onClick: drillState.time_grain !== "month" ? handleTimeRollup : undefined,
+    });
+
+    if (drillState.time_grain === "week" || drillState.time_grain === "day") {
+      items.push({
+        label: drillState.selected_time_bucket ? `Week(${drillState.selected_time_bucket})` : "Week",
+        onClick: drillState.time_grain === "day" ? handleTimeRollup : undefined,
+      });
+    }
+
+    if (drillState.time_grain === "day") {
+      items.push({
+        label: drillState.selected_time_bucket || "Day",
+      });
+    }
+
+    return items;
+  };
+
+  const getCategoryBreadcrumbItems = () => {
+    const items = [];
+    items.push({
+      label: "All",
+      onClick: drillState.breakdown_level !== "category" ? handleCategoryRollup : undefined,
+    });
+
+    if (drillState.breakdown_level === "sub_category" && drillState.selected_category) {
+      items.push({
+        label: drillState.selected_category,
+      });
+    }
+
+    return items;
+  };
+
   return (
     <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
       <h1 style={{ marginBottom: "2rem", fontSize: "2rem" }}>BI Dashboard</h1>
@@ -131,6 +277,20 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Breadcrumbs */}
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "1rem",
+              borderRadius: "8px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              marginBottom: "1.5rem",
+            }}
+          >
+            <Breadcrumb title="Time" items={getTimeBreadcrumbItems()} />
+            <Breadcrumb title="Category" items={getCategoryBreadcrumbItems()} />
+          </div>
+
           {/* Charts */}
           <div
             style={{
@@ -140,8 +300,22 @@ export default function Dashboard() {
               marginBottom: "1.5rem",
             }}
           >
-            {timeSeries && <TimeSeriesChart data={timeSeries} />}
-            {breakdown && <BreakdownChart data={breakdown} />}
+            {timeSeries && (
+              <TimeSeriesChart
+                data={timeSeries}
+                onPointClick={
+                  drillState.time_grain !== "day" ? handleTimeDrilldown : undefined
+                }
+              />
+            )}
+            {breakdown && (
+              <BreakdownChart
+                data={breakdown}
+                onBarClick={
+                  drillState.breakdown_level === "category" ? handleCategoryDrilldown : undefined
+                }
+              />
+            )}
           </div>
 
           {/* Data Table */}
