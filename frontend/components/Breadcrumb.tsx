@@ -12,10 +12,10 @@ interface BreadcrumbProps {
 
 export default function Breadcrumb({ title, items }: BreadcrumbProps) {
   return (
-    <div style={{ fontSize: "0.875rem" }}>
-      <span style={{ fontWeight: "500", marginRight: "0.5rem", color: "#666" }}>{title}:</span>
+    <div style={{ fontSize: "0.875rem", display: "inline-flex", alignItems: "center" }}>
+      {title && <span style={{ fontWeight: "500", marginRight: "0.5rem", color: "#666" }}>{title}:</span>}
       {items.map((item, index) => (
-        <span key={index}>
+        <span key={index} style={{ display: "inline-flex", alignItems: "center" }}>
           {index > 0 && <span style={{ margin: "0 0.5rem", color: "#999" }}>{" > "}</span>}
           {item.onClick ? (
             <button
@@ -33,7 +33,9 @@ export default function Breadcrumb({ title, items }: BreadcrumbProps) {
               {item.label}
             </button>
           ) : (
-            <span style={{ color: "#333" }}>{item.label}</span>
+            <span style={{ color: "#333", fontWeight: index === items.length - 1 ? "500" : "normal" }}>
+              {item.label}
+            </span>
           )}
         </span>
       ))}

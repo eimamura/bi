@@ -7,7 +7,6 @@ import TimeSeriesChart from "../../components/TimeSeriesChart";
 import BreakdownChart from "../../components/BreakdownChart";
 import DataTable from "../../components/DataTable";
 import Breadcrumb from "../../components/Breadcrumb";
-import StatusChips from "../../components/StatusChips";
 import { Filters, KPIs, TimeSeries, Breakdown, DrillState, TimeGrain, BreakdownLevel } from "../types";
 import { fetchKPIs, fetchTimeSeries, fetchBreakdown } from "../api";
 import { formatCurrency, formatNumber } from "../../utils/format";
@@ -290,12 +289,13 @@ export default function Dashboard() {
   const getCategoryBreadcrumbItems = () => {
     const items = [];
     
-    // Priority: Show filter state first, then drill state
+    // Build drill path: All > Category > Sub-Category
     if (filters.category) {
-      // Category filter is active
+      // Category is selected (via filter or drill)
       items.push({
         label: filters.category,
         onClick: () => {
+          // Clicking category rolls up to All
           setFilters({ ...filters, category: undefined, sub_category: undefined });
           setDrillState({
             ...drillState,
@@ -306,10 +306,11 @@ export default function Dashboard() {
       });
       
       if (filters.sub_category) {
-        // Sub-category filter is active
+        // Sub-category is selected
         items.push({
           label: filters.sub_category,
           onClick: () => {
+            // Clicking sub-category rolls up to category level
             setFilters({ ...filters, sub_category: undefined });
             setDrillState({
               ...drillState,
@@ -318,21 +319,23 @@ export default function Dashboard() {
           },
         });
       } else if (drillState.breakdown_level === "sub_category" && drillState.selected_category === filters.category) {
-        // Drilldown to sub-categories for the filtered category
+        // Drilled down to sub-categories view (no specific sub-category selected yet)
         items.push({
           label: "Sub-Categories",
         });
       }
     } else {
-      // No category filter, show drill state
+      // No category selected - show "All"
       items.push({
         label: "All",
         onClick: drillState.breakdown_level !== "category" ? handleCategoryRollup : undefined,
       });
 
       if (drillState.breakdown_level === "sub_category" && drillState.selected_category) {
+        // Drilled down but no filter applied
         items.push({
           label: drillState.selected_category,
+          onClick: handleCategoryRollup,
         });
       }
     }
@@ -353,26 +356,37 @@ export default function Dashboard() {
           marginBottom: "1.5rem",
         }}
       >
-        <button
-          onClick={() => setFiltersExpanded(!filtersExpanded)}
+        <div
           style={{
-            width: "100%",
             padding: "1rem",
-            border: "none",
-            background: "none",
-            cursor: "pointer",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: "1rem",
-            fontWeight: "500",
           }}
         >
-          <span>Filters</span>
-          <span style={{ fontSize: "0.875rem", color: "#666" }}>
-            {filtersExpanded ? "▲" : "▼"}
-          </span>
-        </button>
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            style={{
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "1rem",
+              fontWeight: "500",
+              padding: 0,
+            }}
+          >
+            <span>Filters</span>
+            <span style={{ fontSize: "0.875rem", color: "#666" }}>
+              {filtersExpanded ? "▲" : "▼"}
+            </span>
+          </button>
+          <div style={{ fontSize: "0.875rem", color: "#666", flex: 1, textAlign: "right", marginLeft: "1rem" }}>
+            Date: {filters.date_from} → {filters.date_to} | Category: {filters.category || "All"} | Sub: {filters.sub_category || "All"} | SKU: {filters.sku || "All"}
+          </div>
+        </div>
         {filtersExpanded && (
           <div style={{ padding: "0 1rem 1rem 1rem", borderTop: "1px solid #eee" }}>
             <FilterPanel
@@ -420,15 +434,12 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Status Chips */}
-          <StatusChips filters={filters} drillState={drillState} />
-
-          {/* Compact Breadcrumbs - Shows current drill state and filter state */}
+          {/* Drill Navigation + Time Grain - Above Charts */}
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              gap: "0.5rem",
+              justifyContent: "space-between",
+              alignItems: "center",
               marginBottom: "1rem",
               padding: "0.75rem",
               backgroundColor: "#f8f9fa",
@@ -436,72 +447,111 @@ export default function Dashboard() {
               fontSize: "0.875rem",
             }}
           >
-            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
-              <Breadcrumb title="Time View" items={getTimeBreadcrumbItems()} />
-              <Breadcrumb title="Category View" items={getCategoryBreadcrumbItems()} />
-              {(drillState.time_grain !== "month" || drillState.breakdown_level !== "category" || filters.category || filters.sub_category) && (
-                <div style={{ display: "flex", gap: "0.5rem", marginLeft: "auto" }}>
-                  {(drillState.time_grain !== "month" || drillState.breakdown_level !== "category") && (
-                    <button
-                      onClick={() => {
-                        setDrillState({
-                          time_grain: "month",
-                          breakdown_level: "category",
-                        });
-                        setFilters({
-                          ...filters,
-                          category: undefined,
-                          sub_category: undefined,
-                        });
-                      }}
-                      style={{
-                        padding: "0.25rem 0.75rem",
-                        backgroundColor: "#666",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      Reset Drill
-                    </button>
-                  )}
-                  {drillState.time_grain !== "month" && (
-                    <button
-                      onClick={handleTimeRollup}
-                      style={{
-                        padding: "0.25rem 0.75rem",
-                        backgroundColor: "#0070f3",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      Back (Time)
-                    </button>
-                  )}
-                  {drillState.breakdown_level === "sub_category" && (
-                    <button
-                      onClick={handleCategoryRollup}
-                      style={{
-                        padding: "0.25rem 0.75rem",
-                        backgroundColor: "#0070f3",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      Back (Category)
-                    </button>
-                  )}
-                </div>
-              )}
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
+              {/* Time Grain Selector */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontWeight: "500", color: "#666" }}>Time:</span>
+                <select
+                  value={drillState.time_grain}
+                  onChange={(e) => {
+                    const newGrain = e.target.value as TimeGrain;
+                    setDrillState({
+                      ...drillState,
+                      time_grain: newGrain,
+                      selected_time_bucket: undefined,
+                    });
+                  }}
+                  style={{
+                    padding: "0.25rem 0.5rem",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    fontSize: "0.875rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="month">Month</option>
+                  <option value="week">Week</option>
+                  <option value="day">Day</option>
+                </select>
+              </div>
+
+              {/* Drill Breadcrumb */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontWeight: "500", color: "#666" }}>Drill:</span>
+                <Breadcrumb title="" items={getCategoryBreadcrumbItems()} />
+                {(drillState.time_grain === "day" && drillState.breakdown_level === "sub_category") && (
+                  <span style={{ fontSize: "0.75rem", color: "#999", fontStyle: "italic" }}>
+                    (Cannot drill further)
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Reset/Back Buttons */}
+            {(drillState.time_grain !== "month" || drillState.breakdown_level !== "category" || filters.category || filters.sub_category) && (
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {(drillState.time_grain !== "month" || drillState.breakdown_level !== "category") && (
+                  <button
+                    onClick={() => {
+                      setDrillState({
+                        time_grain: "month",
+                        breakdown_level: "category",
+                        selected_time_bucket: undefined,
+                        selected_category: undefined,
+                      });
+                      setFilters({
+                        ...filters,
+                        category: undefined,
+                        sub_category: undefined,
+                      });
+                    }}
+                    style={{
+                      padding: "0.25rem 0.75rem",
+                      backgroundColor: "#666",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    Reset Drill
+                  </button>
+                )}
+                {drillState.time_grain !== "month" && (
+                  <button
+                    onClick={handleTimeRollup}
+                    style={{
+                      padding: "0.25rem 0.75rem",
+                      backgroundColor: "#0070f3",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    Back
+                  </button>
+                )}
+                {drillState.breakdown_level === "sub_category" && (
+                  <button
+                    onClick={handleCategoryRollup}
+                    style={{
+                      padding: "0.25rem 0.75rem",
+                      backgroundColor: "#0070f3",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    Back
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Charts */}
