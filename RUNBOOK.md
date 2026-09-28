@@ -309,7 +309,7 @@ If queries are slow:
 
 1. Check bundle size:
    ```bash
-   docker compose exec frontend npm run build
+   docker compose exec frontend pnpm run build
    ```
 
 2. Check for memory leaks in browser DevTools

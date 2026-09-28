@@ -150,7 +150,7 @@ docker compose exec backend black --check .
 docker compose exec backend ruff check .
 
 # Frontend
-docker compose exec frontend npm run lint
+docker compose exec frontend pnpm run lint
 ```
 
 ### Format Code
@@ -160,7 +160,7 @@ docker compose exec backend black .
 docker compose exec backend ruff check --fix .
 
 # Frontend
-docker compose exec frontend npm run format
+docker compose exec frontend pnpm run format
 ```
 
 ## Development
